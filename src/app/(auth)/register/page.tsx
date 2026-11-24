@@ -60,9 +60,7 @@ export default function RegisterPage() {
         setShowOtpInput(true);
         setOtpFeedback({
           type: 'success',
-          message: res.simulated
-            ? 'Verification code sent (Simulator Code: 123456)'
-            : `SMS code dispatched to ${res.maskedPhone || clean} via smsapi.lk`,
+          message: `SMS code dispatched to ${res.maskedPhone || clean} via SMS`,
         });
       } else {
         setOtpFeedback({ type: 'error', message: res.message || 'Failed to dispatch SMS' });

@@ -105,12 +105,7 @@ function LoginForm() {
         setPhoneStep('enter_otp');
         setMaskedPhone(res.maskedPhone || clean);
         setResendCountdown(45);
-        setIsSimulated(res.simulated || false);
-        setSuccessMsg(
-          res.simulated
-            ? 'Verification code sent! (Simulated mode: code is 123456)'
-            : `SMS verification code dispatched to ${res.maskedPhone || clean} via smsapi.lk`,
-        );
+        setSuccessMsg(`SMS verification code dispatched to ${res.maskedPhone || clean} via SMS`);
       } else {
         setError(res.message || 'Failed to send SMS code. Please try again.');
       }
@@ -416,14 +411,6 @@ function LoginForm() {
                       className="w-full h-12 pl-10 pr-4 text-center tracking-[0.4em] font-mono text-lg font-bold rounded-xl bg-surface text-on-surface border border-outline-variant focus:border-secondary focus:bg-white focus:outline-none transition-all"
                     />
                   </div>
-
-                  {isSimulated && (
-                    <div className="mt-2 text-center">
-                      <span className="inline-block text-[11px] font-mono bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full font-semibold">
-                        ⚡ Dev Simulator OTP: <strong className="font-bold">123456</strong>
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 <Button
