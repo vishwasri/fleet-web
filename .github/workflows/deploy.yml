@@ -45,6 +45,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=https://rent.verssaro.com/api
           tags: |
             ghcr.io/${{ steps.meta.outputs.ghcr_owner }}/fleet-web:${{ github.sha }}
             ghcr.io/${{ steps.meta.outputs.ghcr_owner }}/fleet-web:latest

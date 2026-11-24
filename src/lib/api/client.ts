@@ -206,10 +206,17 @@ class ApiClient {
   private detailedOrg: OrganizationDetailed | null = null;
 
   constructor() {
-    this.baseUrl =
-      typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_BASE_URL
-        ? process.env.NEXT_PUBLIC_API_BASE_URL
-        : 'http://localhost:3005/api';
+    if (typeof window !== 'undefined') {
+      // When running in a browser:
+      // If we are accessing a cloud/production domain (not localhost), use the current origin /api
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        this.baseUrl = `${window.location.origin}/api`;
+      } else {
+        this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3005/api';
+      }
+    } else {
+      this.baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3005/api';
+    }
 
     this.useMockApi =
       typeof window !== 'undefined' && process.env.NEXT_PUBLIC_USE_MOCK_API === 'true';
