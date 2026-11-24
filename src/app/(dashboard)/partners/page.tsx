@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { PartnerRental, PartnerRequest, PartnerOrganization } from '@/types';
-import { mockPartnerOrgs } from '@/lib/data/mock-data';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge, StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,19 +26,21 @@ export default function PartnerRentalsHomePage() {
   const [activeTab, setActiveTab] = useState<'rentals' | 'requests' | 'directory'>('rentals');
   const [rentals, setRentals] = useState<PartnerRental[]>([]);
   const [requests, setRequests] = useState<PartnerRequest[]>([]);
-  const [partners] = useState<PartnerOrganization[]>(mockPartnerOrgs);
+  const [partners, setPartners] = useState<PartnerOrganization[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       setIsLoading(true);
       try {
-        const [rData, reqData] = await Promise.all([
+        const [rData, reqData, pData] = await Promise.all([
           api.getPartnerRentals(),
           api.getPartnerRequests(),
+          api.getConnectedPartners(),
         ]);
         setRentals(rData);
         setRequests(reqData);
+        setPartners(pData);
       } finally {
         setIsLoading(false);
       }
@@ -211,32 +212,40 @@ export default function PartnerRentalsHomePage() {
 
       {/* TAB 3: VERIFIED PARTNER DIRECTORY */}
       {activeTab === 'directory' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {partners.map((p) => (
-            <Card key={p.id} className="p-5 border border-surface-container">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-primary-container text-white flex items-center justify-center font-bold text-xs">
-                  <Building2 className="w-5 h-5 text-secondary-container" />
+        partners.length === 0 ? (
+          <div className="py-16 text-center bg-white rounded-2xl border border-surface-container">
+            <Building2 className="w-12 h-12 text-outline mx-auto mb-2" />
+            <h3 className="text-sm font-bold text-on-surface">No connected partner fleets yet</h3>
+            <p className="text-xs text-on-surface-variant mt-1">Connect with other vehicle rental companies to unlock inter-fleet cross-rentals.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {partners.map((p) => (
+              <Card key={p.id} className="p-5 border border-surface-container">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary-container text-white flex items-center justify-center font-bold text-xs">
+                    <Building2 className="w-5 h-5 text-secondary-container" />
+                  </div>
+                  <Badge variant="success" size="sm">Verified Fleet</Badge>
                 </div>
-                <Badge variant="success" size="sm">Verified Fleet</Badge>
-              </div>
 
-              <h4 className="text-sm font-bold text-on-surface">{p.displayName}</h4>
-              <p className="text-xs text-on-surface-variant mt-0.5">{p.hubLocation}, {p.city}</p>
+                <h4 className="text-sm font-bold text-on-surface">{p.displayName}</h4>
+                <p className="text-xs text-on-surface-variant mt-0.5">{p.hubLocation}, {p.city}</p>
 
-              <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-surface-container text-xs">
-                <div>
-                  <span className="text-[10px] text-on-surface-variant uppercase font-bold">Fleet Rating</span>
-                  <p className="font-extrabold text-amber-600 mt-0.5">★ {p.rating}</p>
+                <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-surface-container text-xs">
+                  <div>
+                    <span className="text-[10px] text-on-surface-variant uppercase font-bold">Fleet Rating</span>
+                    <p className="font-extrabold text-amber-600 mt-0.5">★ {p.rating}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-on-surface-variant uppercase font-bold">Commercial Fleet</span>
+                    <p className="font-extrabold text-on-surface mt-0.5">{p.fleetCount} Assets</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[10px] text-on-surface-variant uppercase font-bold">Commercial Fleet</span>
-                  <p className="font-extrabold text-on-surface mt-0.5">{p.fleetCount} Assets</p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )
       )}
     </div>
   );

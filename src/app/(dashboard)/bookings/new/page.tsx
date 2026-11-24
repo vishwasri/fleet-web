@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Car,
   User,
@@ -13,6 +14,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   MapPin,
+  Plus,
 } from 'lucide-react';
 import { api } from '@/lib/api/client';
 import { Customer, Vehicle } from '@/types';
@@ -149,34 +151,43 @@ function CreateDirectBookingContent() {
           </p>
 
           <div className="space-y-2 mt-4">
-            {customers.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => setSelectedCustomerId(c.id)}
-                className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                  selectedCustomerId === c.id
-                    ? 'border-secondary bg-teal-50/60 ring-2 ring-secondary/20'
-                    : 'border-surface-container bg-surface hover:bg-surface-container'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-bold text-on-surface">{c.fullName}</p>
-                    {c.isVerified && <Badge variant="success" size="sm">Verified KYC</Badge>}
-                  </div>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5">
-                    {c.email} • {c.phone} • DL: {c.drivingLicenseNumber}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-on-surface">{c.totalRentalsCount} Rentals</span>
-                </div>
+            {customers.length === 0 ? (
+              <div className="py-8 text-center bg-surface rounded-xl border border-dashed border-surface-container">
+                <p className="text-xs text-on-surface-variant font-medium">No customers found in your CRM yet.</p>
+                <Link href="/customers" className="inline-block mt-2 text-xs font-bold text-secondary hover:underline">
+                  + Add Customer to CRM first
+                </Link>
               </div>
-            ))}
+            ) : (
+              customers.map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => setSelectedCustomerId(c.id)}
+                  className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                    selectedCustomerId === c.id
+                      ? 'border-secondary bg-teal-50/60 ring-2 ring-secondary/20'
+                      : 'border-surface-container bg-surface hover:bg-surface-container'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-on-surface">{c.fullName}</p>
+                      {c.isVerified && <Badge variant="success" size="sm">Verified KYC</Badge>}
+                    </div>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5">
+                      {c.email} • {c.phone} • DL: {c.drivingLicenseNumber}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-on-surface">{c.totalRentalsCount} Rentals</span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           <div className="pt-4 flex justify-end">
-            <Button onClick={() => setStep(2)}>
+            <Button onClick={() => setStep(2)} disabled={!selectedCustomerId || customers.length === 0}>
               <span>Select Vehicle</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
@@ -198,32 +209,41 @@ function CreateDirectBookingContent() {
               <Badge variant="warning">Checking Availability...</Badge>
             ) : isAvailable === true ? (
               <Badge variant="success">Vehicle Available</Badge>
-            ) : (
+            ) : isAvailable === false ? (
               <Badge variant="error">Date Conflict Detected</Badge>
-            )}
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            {vehicles.map((v) => (
-              <div
-                key={v.id}
-                onClick={() => setSelectedVehicleId(v.id)}
-                className={`p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
-                  selectedVehicleId === v.id
-                    ? 'border-secondary bg-teal-50/60 ring-2 ring-secondary/20'
-                    : 'border-surface-container bg-surface hover:bg-surface-container'
-                }`}
-              >
-                <div className="w-12 h-12 rounded-xl bg-surface-container-high overflow-hidden flex-shrink-0">
-                  <img src={v.primaryImageUrl} alt={v.model} className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-on-surface truncate">{v.make} {v.model}</p>
-                  <p className="text-[10px] text-on-surface-variant font-mono">{v.licensePlate} • {v.category}</p>
-                  <p className="text-xs font-extrabold text-secondary mt-0.5">{formatCurrency(v.dailyRate)} / day</p>
-                </div>
+            {vehicles.length === 0 ? (
+              <div className="py-8 text-center bg-surface rounded-xl border border-dashed border-surface-container col-span-full">
+                <p className="text-xs text-on-surface-variant font-medium">No vehicles in your fleet yet.</p>
+                <Link href="/vehicles/new" className="inline-block mt-2 text-xs font-bold text-secondary hover:underline">
+                  + Add your first vehicle
+                </Link>
               </div>
-            ))}
+            ) : (
+              vehicles.map((v) => (
+                <div
+                  key={v.id}
+                  onClick={() => setSelectedVehicleId(v.id)}
+                  className={`p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                    selectedVehicleId === v.id
+                      ? 'border-secondary bg-teal-50/60 ring-2 ring-secondary/20'
+                      : 'border-surface-container bg-surface hover:bg-surface-container'
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-surface-container-high overflow-hidden flex-shrink-0">
+                    <img src={v.primaryImageUrl} alt={v.model} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-on-surface truncate">{v.make} {v.model}</p>
+                    <p className="text-[10px] text-on-surface-variant font-mono">{v.licensePlate} • {v.category}</p>
+                    <p className="text-xs font-extrabold text-secondary mt-0.5">{formatCurrency(v.dailyRate)} / day</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           {isAvailable === false && (
@@ -238,7 +258,7 @@ function CreateDirectBookingContent() {
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
             </Button>
-            <Button onClick={() => setStep(3)} disabled={isAvailable === false}>
+            <Button onClick={() => setStep(3)} disabled={!selectedVehicleId || vehicles.length === 0 || isAvailable === false}>
               <span>Set Schedule</span>
               <ArrowRight className="w-4 h-4" />
             </Button>

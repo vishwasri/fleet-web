@@ -1,4 +1,4 @@
-export type AccountType = 'BUSINESS_USER' | 'CUSTOMER' | 'SYSTEM_ADMIN';
+export type AccountType = 'BUSINESS_USER' | 'CUSTOMER' | 'SYSTEM_ADMIN' | 'PLATFORM_ADMIN';
 
 export type OrgRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'DISPATCHER' | 'INSPECTOR' | 'STAFF';
 
@@ -108,6 +108,87 @@ export interface Organization {
   taxNumber?: string;
   logoUrl?: string;
   verified?: boolean;
+}
+
+export interface OrganizationSettings {
+  id?: string;
+  organizationId?: string;
+  currency?: string;
+  timezone?: string;
+  defaultPickupInstructions?: string;
+  defaultReturnInstructions?: string;
+  defaultRentalAgreementText?: string;
+  requireInspectionOnPickup?: boolean;
+  requireInspectionOnReturn?: boolean;
+  requirePartnerInspectionOnHandover?: boolean;
+  requirePartnerInspectionOnReturn?: boolean;
+  allowBookingWithUnpaidBalance?: boolean;
+  allowOverbooking?: boolean;
+  blockBookingsForExpiredInsurance?: boolean;
+  blockBookingsForExpiredRegistration?: boolean;
+  blockBookingsForExpiredRequiredDocuments?: boolean;
+  documentExpiryAlertDays?: number;
+  defaultTaxRate?: number;
+  taxInclusive?: boolean;
+  defaultDepositType?: 'FIXED' | 'PERCENTAGE';
+  defaultDepositValue?: number;
+  defaultMileageLimitPerDay?: number;
+  defaultExtraMileageRate?: number;
+  lateReturnGracePeriodMinutes?: number;
+  defaultLateReturnRateType?: 'HOURLY' | 'DAILY';
+  defaultLateReturnRate?: number;
+  futureMarketplaceInstantBookingEnabled?: boolean;
+}
+
+export interface OrganizationMemberItem {
+  id: string;
+  userId: string;
+  role: OrgRole;
+  status: string;
+  createdAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    accountType?: string;
+    status?: string;
+  };
+}
+
+export interface BranchLocationItem {
+  id: string;
+  name: string;
+  address: string;
+  phone?: string;
+  email?: string;
+  isPrimary?: boolean;
+}
+
+export interface OrganizationDetailed extends Organization {
+  slug?: string;
+  description?: string;
+  marketplaceStatus?: 'PRIVATE' | 'PENDING_APPROVAL' | 'PUBLISHED' | 'SUSPENDED';
+  acceptsOnlineBookings?: boolean;
+  status?: string;
+  subscriptionPlan?: SubscriptionPlan | string;
+  maxVehicles?: number;
+  maxMembers?: number;
+  billingCycle?: string;
+  planExpiresAt?: string;
+  taxId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  settings?: OrganizationSettings;
+  members?: OrganizationMemberItem[];
+  branchLocations?: BranchLocationItem[];
+  _count?: {
+    vehicles: number;
+    bookings: number;
+    members: number;
+    customerProfiles?: number;
+  };
 }
 
 export interface Vehicle {
@@ -411,3 +492,123 @@ export interface DashboardSummary {
     status: string;
   }[];
 }
+
+// ==========================================
+// SAAS & SUPER ADMIN MANAGEMENT
+// ==========================================
+
+export type OrganizationStatus = 'ACTIVE' | 'PENDING_SETUP' | 'SUSPENDED' | 'CANCELLED';
+
+export type SubscriptionPlan = 'FREE_TRIAL' | 'STARTER' | 'PRO' | 'ENTERPRISE';
+
+export interface CompanyUsage {
+  vehicleCount: number;
+  vehicleCapacityPercent: number;
+  memberCount: number;
+  bookingCount: number;
+}
+
+export interface CompanyOwner {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  status: string;
+}
+
+export interface SuperAdminCompany {
+  id: string;
+  slug?: string;
+  legalName: string;
+  displayName: string;
+  email: string;
+  phone: string;
+  address?: string;
+  currency: string;
+  timezone: string;
+  status: OrganizationStatus;
+  subscriptionPlan: SubscriptionPlan;
+  maxVehicles: number;
+  maxMembers: number;
+  billingCycle: string;
+  planExpiresAt?: string;
+  businessRegNumber?: string;
+  taxId?: string;
+  createdAt: string;
+  updatedAt: string;
+  usage: CompanyUsage;
+  owner?: CompanyOwner | null;
+}
+
+export interface PlatformMetrics {
+  overview: {
+    totalCompanies: number;
+    activeCompanies: number;
+    suspendedCompanies: number;
+    totalFleetVehicles: number;
+    fleetAvailable: number;
+    fleetRented: number;
+    fleetMaintenance: number;
+    totalBookings: number;
+    totalRegisteredUsers: number;
+    estimatedMRR: number;
+  };
+  plansDistribution: Record<string, number>;
+}
+
+export interface CreateCompanyInput {
+  legalName: string;
+  displayName: string;
+  slug?: string;
+  organizationEmail: string;
+  organizationPhone: string;
+  address?: string;
+  timezone?: string;
+  currency?: string;
+  subscriptionPlan?: SubscriptionPlan;
+  maxVehicles?: number;
+  maxMembers?: number;
+  businessRegNumber?: string;
+  taxId?: string;
+  ownerFirstName: string;
+  ownerLastName: string;
+  ownerEmail: string;
+  ownerPhone?: string;
+  ownerPassword: string;
+}
+
+export interface RegisterOrganizationInput {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  organizationName: string;
+  legalName?: string;
+  address?: string;
+  timezone?: string;
+  currency?: string;
+}
+
+export interface UpdateCompanyInput {
+  legalName?: string;
+  displayName?: string;
+  slug?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  timezone?: string;
+  currency?: string;
+  logoUrl?: string;
+  description?: string;
+  status?: OrganizationStatus;
+  subscriptionPlan?: SubscriptionPlan;
+  maxVehicles?: number;
+  maxMembers?: number;
+  billingCycle?: string;
+  planExpiresAt?: string;
+  businessRegNumber?: string;
+  taxId?: string;
+}
+

@@ -232,54 +232,60 @@ export default function FinanceDashboardPage() {
           </CardHeader>
 
           <div className="divide-y divide-surface-container">
-            {filteredTransactions.map((tx) => (
-              <div key={tx.id} className="py-3.5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
-                      tx.type === 'INCOME'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : tx.type === 'EXPENSE'
-                        ? 'bg-rose-100 text-rose-800'
-                        : 'bg-teal-100 text-teal-800'
-                    }`}
-                  >
-                    {tx.type === 'INCOME' ? (
-                      <ArrowDownLeft className="w-4 h-4" />
-                    ) : tx.type === 'EXPENSE' ? (
-                      <ArrowUpRight className="w-4 h-4" />
-                    ) : (
-                      <ShieldAlert className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-on-surface">{tx.description}</p>
-                      <span className="font-mono text-[10px] text-on-surface-variant">
-                        {tx.referenceNumber}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-on-surface-variant">
-                      Category: {tx.category.replace('_', ' ')} • Via {tx.paymentMethod.replace('_', ' ')} • {formatDate(tx.date)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span
-                    className={`text-sm font-extrabold ${
-                      tx.type === 'INCOME'
-                        ? 'text-emerald-700'
-                        : tx.type === 'EXPENSE'
-                        ? 'text-rose-700'
-                        : 'text-secondary'
-                    }`}
-                  >
-                    {tx.type === 'EXPENSE' ? `-${formatCurrency(tx.amount)}` : formatCurrency(tx.amount)}
-                  </span>
-                </div>
+            {filteredTransactions.length === 0 ? (
+              <div className="py-12 text-center text-on-surface-variant font-medium text-xs">
+                No transactions recorded in the ledger yet.
               </div>
-            ))}
+            ) : (
+              filteredTransactions.map((tx) => (
+                <div key={tx.id} className="py-3.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                        tx.type === 'INCOME'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : tx.type === 'EXPENSE'
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-teal-100 text-teal-800'
+                      }`}
+                    >
+                      {tx.type === 'INCOME' ? (
+                        <ArrowDownLeft className="w-4 h-4" />
+                      ) : tx.type === 'EXPENSE' ? (
+                        <ArrowUpRight className="w-4 h-4" />
+                      ) : (
+                        <ShieldAlert className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-bold text-on-surface">{tx.description}</p>
+                        <span className="font-mono text-[10px] text-on-surface-variant">
+                          {tx.referenceNumber}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-on-surface-variant">
+                        Category: {tx.category.replace('_', ' ')} • Via {tx.paymentMethod.replace('_', ' ')} • {formatDate(tx.date)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span
+                      className={`text-sm font-extrabold ${
+                        tx.type === 'INCOME'
+                          ? 'text-emerald-700'
+                          : tx.type === 'EXPENSE'
+                          ? 'text-rose-700'
+                          : 'text-secondary'
+                      }`}
+                    >
+                      {tx.type === 'EXPENSE' ? `-${formatCurrency(tx.amount)}` : formatCurrency(tx.amount)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </Card>
       )}
@@ -297,35 +303,41 @@ export default function FinanceDashboardPage() {
           </CardHeader>
 
           <div className="divide-y divide-surface-container">
-            {deposits.map((dep) => (
-              <div key={dep.id} className="py-3.5 flex items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-bold text-on-surface">{dep.customerName}</p>
-                    <Badge variant={dep.status === 'HELD' ? 'warning' : dep.status === 'REFUNDED' ? 'success' : 'error'}>
-                      {dep.status}
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-on-surface-variant mt-0.5">
-                    Vehicle: {dep.vehicleInfo} • Received: {formatDate(dep.receivedDate)}
-                  </p>
-                  {dep.deductionReason && (
-                    <p className="text-[10px] text-rose-600 font-semibold mt-0.5">
-                      Deduction: {dep.deductionReason}
-                    </p>
-                  )}
-                </div>
-
-                <div className="text-right">
-                  <p className="text-sm font-extrabold text-secondary">{formatCurrency(dep.amountHeld)}</p>
-                  {dep.refundedAmount > 0 && (
-                    <span className="text-[10px] text-emerald-600 font-bold block">
-                      Refunded: {formatCurrency(dep.refundedAmount)}
-                    </span>
-                  )}
-                </div>
+            {deposits.length === 0 ? (
+              <div className="py-12 text-center text-on-surface-variant font-medium text-xs">
+                No escrow security deposits currently held.
               </div>
-            ))}
+            ) : (
+              deposits.map((dep) => (
+                <div key={dep.id} className="py-3.5 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-bold text-on-surface">{dep.customerName}</p>
+                      <Badge variant={dep.status === 'HELD' ? 'warning' : dep.status === 'REFUNDED' ? 'success' : 'error'}>
+                        {dep.status}
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-on-surface-variant mt-0.5">
+                      Vehicle: {dep.vehicleInfo} • Received: {formatDate(dep.receivedDate)}
+                    </p>
+                    {dep.deductionReason && (
+                      <p className="text-[10px] text-rose-600 font-semibold mt-0.5">
+                        Deduction: {dep.deductionReason}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm font-extrabold text-secondary">{formatCurrency(dep.amountHeld)}</p>
+                    {dep.refundedAmount > 0 && (
+                      <span className="text-[10px] text-emerald-600 font-bold block">
+                        Refunded: {formatCurrency(dep.refundedAmount)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </Card>
       )}

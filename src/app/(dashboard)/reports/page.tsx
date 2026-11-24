@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart3,
   Download,
@@ -14,11 +14,32 @@ import {
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/format';
-import { mockVehicleProfitability } from '@/lib/data/mock-data';
+import { api } from '@/lib/api/client';
+import { VehicleProfitability } from '@/types';
 
 export default function ReportsDashboardPage() {
   const [period, setPeriod] = useState<'MTD' | 'LAST_MONTH' | 'YTD'>('MTD');
-  const [profitability] = useState(mockVehicleProfitability);
+  const [profitability, setProfitability] = useState<VehicleProfitability[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setIsLoading(true);
+      try {
+        const data = await api.getVehicleProfitability();
+        setProfitability(Array.isArray(data) ? data : []);
+      } catch {
+        setProfitability([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    load();
+  }, [period]);
+
+  const totalGross = profitability.reduce((sum, p) => sum + (p.grossRevenue || 0), 0);
+  const totalExp = profitability.reduce((sum, p) => sum + (p.operatingExpenses || 0), 0);
+  const totalNet = totalGross - totalExp;
 
   const handleExportCSV = () => {
     const headers = ['Vehicle Asset', 'Plate', 'Gross Revenue', 'Expenses', 'Net Profit', 'Margin %', 'Utilization %'];
@@ -84,26 +105,26 @@ export default function ReportsDashboardPage() {
             <span className="text-xs font-bold text-on-surface-variant">Total Fleet Turnover</span>
             <TrendingUp className="w-4 h-4 text-emerald-600" />
           </div>
-          <p className="text-2xl font-extrabold text-primary mt-2">{formatCurrency(15820)}</p>
-          <p className="text-[11px] text-emerald-600 font-bold mt-1">+14.2% from previous cycle</p>
+          <p className="text-2xl font-extrabold text-primary mt-2">{formatCurrency(totalGross)}</p>
+          <p className="text-[11px] text-emerald-600 font-bold mt-1">Gross fleet earnings</p>
         </Card>
 
         <Card className="p-5 border-l-4 border-l-emerald-500">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-on-surface-variant">Direct Consumer Rentals</span>
+            <span className="text-xs font-bold text-on-surface-variant">Net Fleet Profit</span>
             <Car className="w-4 h-4 text-emerald-600" />
           </div>
-          <p className="text-2xl font-extrabold text-emerald-700 mt-2">{formatCurrency(11240)}</p>
-          <p className="text-[11px] text-on-surface-variant mt-1">71.0% of total revenue</p>
+          <p className="text-2xl font-extrabold text-emerald-700 mt-2">{formatCurrency(totalNet)}</p>
+          <p className="text-[11px] text-on-surface-variant mt-1">After operational costs</p>
         </Card>
 
         <Card className="p-5 border-l-4 border-l-teal-500">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-on-surface-variant">B2B Wholesale Settlements</span>
+            <span className="text-xs font-bold text-on-surface-variant">Operating Expenses</span>
             <Handshake className="w-4 h-4 text-secondary" />
           </div>
-          <p className="text-2xl font-extrabold text-secondary mt-2">{formatCurrency(4580)}</p>
-          <p className="text-[11px] text-on-surface-variant mt-1">29.0% inter-fleet wholesale</p>
+          <p className="text-2xl font-extrabold text-secondary mt-2">{formatCurrency(totalExp)}</p>
+          <p className="text-[11px] text-on-surface-variant mt-1">Maintenance & operations</p>
         </Card>
       </div>
 
@@ -130,28 +151,36 @@ export default function ReportsDashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container font-medium">
-              {profitability.map((p, idx) => (
-                <tr key={p.vehicleId} className="hover:bg-surface-container-low transition-colors">
-                  <td className="py-3 px-2 font-bold text-on-surface flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center text-[10px] font-bold">
-                      {idx + 1}
-                    </span>
-                    <span>{p.make} {p.model}</span>
-                  </td>
-                  <td className="py-3 px-2 font-mono text-outline">{p.licensePlate}</td>
-                  <td className="py-3 px-2 text-emerald-600 font-bold">{formatCurrency(p.grossRevenue)}</td>
-                  <td className="py-3 px-2 text-rose-500 font-bold">{formatCurrency(p.operatingExpenses)}</td>
-                  <td className="py-3 px-2 text-primary font-extrabold">{formatCurrency(p.netProfit)}</td>
-                  <td className="py-3 px-2">
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px]">
-                      {p.profitMarginPercent}%
-                    </span>
-                  </td>
-                  <td className="py-3 px-2 text-right font-bold text-on-surface">
-                    {p.utilizationRatePercent}% ({p.totalRentalDays} days)
+              {profitability.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-on-surface-variant font-medium">
+                    No vehicle yield records available for this period.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                profitability.map((p, idx) => (
+                  <tr key={p.vehicleId} className="hover:bg-surface-container-low transition-colors">
+                    <td className="py-3 px-2 font-bold text-on-surface flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center text-[10px] font-bold">
+                        {idx + 1}
+                      </span>
+                      <span>{p.make} {p.model}</span>
+                    </td>
+                    <td className="py-3 px-2 font-mono text-outline">{p.licensePlate}</td>
+                    <td className="py-3 px-2 text-emerald-600 font-bold">{formatCurrency(p.grossRevenue)}</td>
+                    <td className="py-3 px-2 text-rose-500 font-bold">{formatCurrency(p.operatingExpenses)}</td>
+                    <td className="py-3 px-2 text-primary font-extrabold">{formatCurrency(p.netProfit)}</td>
+                    <td className="py-3 px-2">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px]">
+                        {p.profitMarginPercent}%
+                      </span>
+                    </td>
+                    <td className="py-3 px-2 text-right font-bold text-on-surface">
+                      {p.utilizationRatePercent}% ({p.totalRentalDays} days)
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

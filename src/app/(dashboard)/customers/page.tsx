@@ -117,6 +117,12 @@ export default function CustomersCRMPage() {
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-semibold text-on-surface-variant mt-3">Loading CRM directory...</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-16 text-center bg-white rounded-2xl border border-surface-container">
+          <Users className="w-12 h-12 text-outline mx-auto mb-2" />
+          <h3 className="text-sm font-bold text-on-surface">No customers found</h3>
+          <p className="text-xs text-on-surface-variant mt-1">Add customers to your CRM or create a new booking.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((c) => (

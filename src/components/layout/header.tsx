@@ -1,28 +1,44 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Menu,
   Bell,
   Search,
-  Building2,
   ChevronDown,
-  Check,
   CheckCheck,
+  LogOut,
+  Settings,
+  ShieldCheck,
+  User as UserIcon,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/auth-context';
-import { mockNotifications } from '@/lib/data/mock-data';
+import { api } from '@/lib/api/client';
+import { NotificationItem } from '@/types';
 
 export function Header({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }) {
-  const { user, activeOrg, organizations, switchOrganization } = useAuth();
-  const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
+  const { user, activeOrg, logout } = useAuth();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  useEffect(() => {
+    if (activeOrg) {
+      api.getNotifications().then((data) => {
+        setNotifications(Array.isArray(data) ? data : []);
+      }).catch(() => {
+        setNotifications([]);
+      });
+    }
+  }, [activeOrg]);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const markAllRead = () => {
+  const markAllRead = async () => {
+    try {
+      await api.markAllNotificationsAsRead();
+    } catch {}
     setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
   };
 
@@ -48,44 +64,8 @@ export function Header({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }) {
         </div>
       </div>
 
-      {/* Right side: Tenant Switcher + Notifications + Profile */}
+      {/* Right side: Notifications + User Profile */}
       <div className="flex items-center gap-3">
-        {/* Multi-Tenant Organization Switcher */}
-        <div className="relative">
-          <button
-            onClick={() => setIsOrgDropdownOpen(!isOrgDropdownOpen)}
-            className="flex items-center gap-2 h-9 px-3 rounded-xl bg-surface border border-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors"
-          >
-            <Building2 className="w-4 h-4 text-secondary" />
-            <span className="hidden md:inline truncate max-w-[130px]">{activeOrg?.displayName}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-on-surface-variant" />
-          </button>
-
-          {isOrgDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-surface-container shadow-xl p-2 z-40">
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider px-3 py-1.5">
-                Switch Tenant Organization
-              </p>
-              {organizations.map((org) => (
-                <button
-                  key={org.id}
-                  onClick={() => {
-                    switchOrganization(org.id);
-                    setIsOrgDropdownOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between p-2.5 rounded-xl text-xs text-left hover:bg-surface-container transition-colors"
-                >
-                  <div>
-                    <p className="font-bold text-on-surface">{org.displayName}</p>
-                    <p className="text-[11px] text-on-surface-variant">{org.legalName}</p>
-                  </div>
-                  {activeOrg?.id === org.id && <Check className="w-4 h-4 text-secondary" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Notifications Popover */}
         <div className="relative">
           <button
@@ -121,22 +101,28 @@ export function Header({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }) {
               </div>
 
               <div className="divide-y divide-surface-container max-h-72 overflow-y-auto mt-2">
-                {notifications.map((n) => (
-                  <Link
-                    key={n.id}
-                    href={n.linkRoute || '/notifications'}
-                    onClick={() => setIsNotifOpen(false)}
-                    className="block py-2.5 px-2 hover:bg-surface-container-low rounded-xl transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-bold text-on-surface">{n.title}</p>
-                      {!n.isRead && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1 flex-shrink-0" />
-                      )}
-                    </div>
-                    <p className="text-[11px] text-on-surface-variant mt-0.5 line-clamp-2">{n.message}</p>
-                  </Link>
-                ))}
+                {notifications.length === 0 ? (
+                  <div className="py-8 text-center text-on-surface-variant text-xs">
+                    No new notifications
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <Link
+                      key={n.id}
+                      href={n.linkRoute || '/notifications'}
+                      onClick={() => setIsNotifOpen(false)}
+                      className="block py-2.5 px-2 hover:bg-surface-container-low rounded-xl transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-bold text-on-surface">{n.title}</p>
+                        {!n.isRead && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-secondary mt-1 flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-on-surface-variant mt-0.5 line-clamp-2">{n.message}</p>
+                    </Link>
+                  ))
+                )}
               </div>
 
               <div className="pt-2 text-center border-t border-surface-container mt-2">
@@ -152,17 +138,85 @@ export function Header({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }) {
           )}
         </div>
 
-        {/* User Avatar */}
-        <div className="flex items-center gap-2 pl-2 border-l border-surface-container">
-          <div className="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center text-xs font-bold shadow-sm">
-            {user?.firstName?.[0] || 'A'}
-          </div>
-          <div className="hidden xl:block text-left">
-            <p className="text-xs font-bold text-on-surface leading-tight">
-              {user?.firstName} {user?.lastName}
-            </p>
-            <p className="text-[10px] text-on-surface-variant font-medium">{user?.role || 'OWNER'}</p>
-          </div>
+        {/* User Menu Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="flex items-center gap-2 pl-2 py-1 pr-1.5 rounded-xl hover:bg-surface-container transition-colors border-l border-surface-container text-left"
+            aria-label="User profile menu"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center text-xs font-bold shadow-sm">
+              {user?.firstName?.[0] || 'A'}
+            </div>
+            <div className="hidden xl:block text-left">
+              <p className="text-xs font-bold text-on-surface leading-tight">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-[10px] text-on-surface-variant font-medium">
+                {user?.role || (user?.accountType === 'PLATFORM_ADMIN' ? 'SUPER ADMIN' : 'OWNER')}
+              </p>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-on-surface-variant hidden xl:block" />
+          </button>
+
+          {isUserMenuOpen && (
+            <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-surface-container shadow-2xl p-2.5 z-40">
+              <div className="p-2 border-b border-surface-container mb-1.5">
+                <p className="text-xs font-bold text-on-surface">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-[11px] text-on-surface-variant truncate">
+                  {user?.email}
+                </p>
+                {user?.phone && (
+                  <p className="text-[11px] text-secondary font-mono mt-0.5">
+                    {user.phone}
+                  </p>
+                )}
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-secondary/10 text-secondary text-[10px] font-bold">
+                    {user?.accountType || 'BUSINESS_USER'}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant text-[10px] font-semibold truncate max-w-[120px]">
+                    {activeOrg?.displayName || 'Workspace'}
+                  </span>
+                </div>
+              </div>
+
+              {user?.accountType === 'PLATFORM_ADMIN' && (
+                <Link
+                  href="/super-admin"
+                  onClick={() => setIsUserMenuOpen(false)}
+                  className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-bold text-indigo-700 hover:bg-indigo-50 transition-colors"
+                >
+                  <ShieldCheck className="w-4 h-4 text-indigo-700" />
+                  <span>Super Admin Portal</span>
+                </Link>
+              )}
+
+              <Link
+                href="/settings"
+                onClick={() => setIsUserMenuOpen(false)}
+                className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-medium text-on-surface hover:bg-surface-container transition-colors"
+              >
+                <Settings className="w-4 h-4 text-on-surface-variant" />
+                <span>Account Settings</span>
+              </Link>
+
+              <div className="border-t border-surface-container mt-1.5 pt-1.5">
+                <button
+                  onClick={async () => {
+                    setIsUserMenuOpen(false);
+                    await logout();
+                  }}
+                  className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-bold text-error hover:bg-rose-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 text-error" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
