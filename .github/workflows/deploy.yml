@@ -118,9 +118,28 @@ jobs:
             chmod 600 .env
           fi
 
+          # Clean up any stale recreate containers or dead containers before recreating services
+          echo "Cleaning up any stale or conflicting containers..."
+          docker ps -a --format '{{.ID}} {{.Names}}' | grep -E '_fleet-(api|web|nginx|mysql)' | awk '{print $1}' | xargs -r docker rm -f 2>/dev/null || true
+          docker container prune -f 2>/dev/null || true
+
           # Pull updated images and bring up the web container
           docker compose pull web
-          docker compose up -d web
+
+          # Ensure api service is up without recreating it if it is already running
+          if ! docker compose ps --status running --services | grep -qx api; then
+            echo "API service is not running; starting dependencies..."
+            docker compose up -d api
+          fi
+
+          # Bring up web container without recreating dependencies
+          if ! docker compose up -d --no-deps web; then
+            echo "Initial up failed. Cleaning up conflicting containers and forcing recreate..."
+            docker ps -a --format '{{.ID}} {{.Names}}' | grep -E '_fleet-(api|web|nginx|mysql)' | awk '{print $1}' | xargs -r docker rm -f 2>/dev/null || true
+            docker compose rm -f -s web 2>/dev/null || true
+            docker compose up -d --no-deps --force-recreate web
+          fi
+
           docker compose exec -T nginx nginx -s reload || docker compose restart nginx
 
           echo "Waiting for Web service to be healthy..."
